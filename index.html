@@ -42,7 +42,7 @@ body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #fafafa
 .title-badge { display:inline-block; background:var(--amarelo); padding: .25em .55em; border-radius: 6px; color:#000; }
 .header p { margin:0; font-size:.92rem; line-height:1.32; }
 .toolbar { background:#fff; border-radius: 12px; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 8px; }
-.filters { display:grid; grid-template-columns: 2fr repeat(5, minmax(115px, 1fr)); gap:6px; align-items:end; }
+.filters { display:grid; grid-template-columns: 2fr repeat(6, minmax(115px, 1fr)); gap:6px; align-items:end; }
 .field label { display:block; font-size:.72rem; font-weight:700; margin:0 0 2px 2px; color:#374151; }
 input, select { width:100%; border:1px solid #cfd4dc; border-radius:8px; padding:6px 7px; font-size:.82rem; background:#fff; color:#111827; }
 input:focus, select:focus { outline: 2px solid rgba(255,207,53,.55); border-color:#d4a600; }
@@ -166,6 +166,7 @@ tr:hover td { background:#fff8dc; }
       <div class="field"><label for="cityFilterBtn">📍 Cidade</label><div class="multi-filter" id="cityFilter"></div></div>
       <div class="field"><label for="areaFilterBtn">🏷️ Área temática</label><div class="multi-filter" id="areaFilter"></div></div>
       <div class="field"><label for="periodFilterBtn">🕒 Período</label><div class="multi-filter" id="periodFilter"></div></div>
+      <div class="field"><label for="dayFilterBtn">📅 Dias da semana</label><div class="multi-filter" id="dayFilter"></div></div>
       <div class="field"><label for="schoolFilterBtn">🏫 Tipo</label><div class="multi-filter" id="schoolFilter"></div></div>
     </div>
     <div class="actions">
@@ -253,11 +254,17 @@ function populateFilters(){
   const cities=[...new Set(DATA.map(r=>getFilterValue(r,'Cidade')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const areas=[...new Set(DATA.flatMap(r=>getListFilterValues(r,'Áreas temáticas')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const periods=[...new Set(DATA.flatMap(r=>getListFilterValues(r,'Período de preferência')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const dayOrder=['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado','domingo','Não Informado(a)'];
+  const days=[...new Set([...dayOrder, ...DATA.flatMap(r=>getListFilterValues(r,'Dias disponíveis'))])].sort((a,b)=>{
+    const ia=dayOrder.indexOf(a), ib=dayOrder.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.localeCompare(b,'pt-BR');
+  });
 
   fillMultiFilter('yearFilter', years, 'Todos');
   fillMultiFilter('cityFilter', cities, 'Todas');
   fillMultiFilter('areaFilter', areas, 'Todas');
   fillMultiFilter('periodFilter', periods, 'Todos');
+  fillMultiFilter('dayFilter', days, 'Todos');
   fillMultiFilter('schoolFilter', ['Instituição escolar'], 'Todos', {'Instituição escolar':'school'});
 }
 
@@ -325,6 +332,7 @@ function getFiltered(){
         cities=getMultiValues('cityFilter'),
         areas=getMultiValues('areaFilter'),
         periods=getMultiValues('periodFilter'),
+        days=getMultiValues('dayFilter'),
         types=getMultiValues('schoolFilter');
   return sortData(DATA).filter(r=>{
     const allText=norm(columns.map(c=>r[c]).join(' '));
@@ -333,6 +341,7 @@ function getFiltered(){
     if(cities.length&&!cities.includes(clean(r['Cidade'])))return false;
     if(!hasIntersection(areas,getListFilterValues(r,'Áreas temáticas')))return false;
     if(!hasIntersection(periods,getListFilterValues(r,'Período de preferência')))return false;
+    if(!hasIntersection(days,getListFilterValues(r,'Dias disponíveis')))return false;
     if(types.includes('school')&&!isSchool(r))return false;
     return true;
   });
@@ -340,7 +349,7 @@ function getFiltered(){
 function render(){const data=getFiltered(),tbody=document.getElementById('tbody'),cards=document.getElementById('cards');tbody.innerHTML='';cards.innerHTML='';data.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML=`<td class="col-small">${yearBadge(clean(r['Ano de referência']))}</td><td class="col-small">${cityBadge(clean(r['Cidade']))}</td><td class="col-med">${esc(clean(r['Comunidade/Bairro']))} ${schoolBadge(r)}</td><td class="col-med">${esc(clean(r['Responsável']))}</td><td class="col-med">${emailCell(r['Contato (e-mail)'])}</td><td class="col-med">${phoneCell(r['Contato (telefone)'])}</td><td class="col-long">${esc(clean(r['Possui espaço disponível?']))}</td><td class="col-small">${esc(clean(r['Faixa etária']))}</td><td class="col-long">${esc(clean(r['Demandas/ações sugeridas']))}</td><td class="col-small">${esc(clean(r['Período de preferência']))}</td><td class="col-med">${esc(clean(r['Dias disponíveis']))}</td><td class="col-med">${areaBadges(r['Áreas temáticas'])}</td>`;tbody.appendChild(tr);const card=document.createElement('div');card.className='card';card.innerHTML=`<h3>${cityBadge(clean(r['Cidade']))} ${esc(clean(r['Comunidade/Bairro']))} ${schoolBadge(r)}</h3><div class="card-grid"><div class="card-field"><strong>📅 Ano</strong>${esc(clean(r['Ano de referência']))}</div><div class="card-field"><strong>👤 Responsável</strong>${esc(clean(r['Responsável']))}</div><div class="card-field"><strong>📧 E-mail</strong>${emailCell(r['Contato (e-mail)'])}</div><div class="card-field"><strong>📱 Telefone</strong>${phoneCell(r['Contato (telefone)'])}</div><div class="card-field"><strong>🏫 Espaço</strong>${esc(clean(r['Possui espaço disponível?']))}</div><div class="card-field"><strong>👥 Faixa etária</strong>${esc(clean(r['Faixa etária']))}</div><div class="card-field"><strong>🕒 Período</strong>${esc(clean(r['Período de preferência']))}</div><div class="card-field"><strong>📅 Dias</strong>${esc(clean(r['Dias disponíveis']))}</div><div class="card-field"><strong>🏷️ Áreas</strong>${areaBadges(r['Áreas temáticas'])}</div><div class="card-field" style="grid-column:1/-1;"><strong>💡 Demandas/ações sugeridas</strong>${esc(clean(r['Demandas/ações sugeridas']))}</div></div>`;cards.appendChild(card);});document.getElementById('counter').textContent=`${data.length} de ${DATA.length} registros`;document.getElementById('empty').style.display=data.length?'none':'block';}
 function clearFilters(){
   document.getElementById('search').value='';
-  ['yearFilter','cityFilter','areaFilter','periodFilter','schoolFilter'].forEach(clearMultiFilter);
+  ['yearFilter','cityFilter','areaFilter','periodFilter','dayFilter','schoolFilter'].forEach(clearMultiFilter);
   render();
 }
 document.getElementById('search').addEventListener('input',render);
