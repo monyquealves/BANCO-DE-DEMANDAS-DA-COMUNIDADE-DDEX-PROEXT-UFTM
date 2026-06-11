@@ -208,6 +208,8 @@ function isSchool(row){
     row['Contato (e-mail)'] || ''
   ].join(' '));
 
+  if(text.includes('familia acolhedora') || text.includes('servico de acolhimento familiar')) return false;
+
   const termosEscola = [
     'escola',
     'escola municipal',
