@@ -176,7 +176,6 @@ tr:hover td { background:#fff8dc; }
       <div class="field"><label for="yearFilterBtn">📅 Ano</label><div class="multi-filter" id="yearFilter"></div></div>
       <div class="field"><label for="cityFilterBtn">📍 Cidade</label><div class="multi-filter" id="cityFilter"></div></div>
       <div class="field"><label for="areaFilterBtn">🏷️ Área temática</label><div class="multi-filter" id="areaFilter"></div></div>
-      <div class="field"><label for="categoryFilterBtn">🏷️ Categoria</label><div class="multi-filter" id="categoryFilter"></div></div>
       <div class="field"><label for="periodFilterBtn">🕒 Período</label><div class="multi-filter" id="periodFilter"></div></div>
       <div class="field"><label for="dayFilterBtn">📅 Dias da semana</label><div class="multi-filter" id="dayFilter"></div></div>
       <div class="field"><label for="schoolFilterBtn">🏫 Tipo</label><div class="multi-filter" id="schoolFilter"></div></div>
@@ -2826,7 +2825,6 @@ function populateFilters(){
   const years=[...new Set(DATA.map(r=>getFilterValue(r,'Ano de referência')))].sort((a,b)=>(parseInt(b)||0)-(parseInt(a)||0)||a.localeCompare(b,'pt-BR'));
   const cities=[...new Set(DATA.map(r=>getFilterValue(r,'Cidade')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const areas=[...new Set(DATA.flatMap(r=>getListFilterValues(r,'Áreas temáticas')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const categories=[...new Set(DATA.flatMap(r=>(r._categorias||[]).map(id=>categoryMeta(id).nome)))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const periods=[...new Set(DATA.flatMap(r=>getListFilterValues(r,'Período de preferência')))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const dayOrder=['segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado','domingo','Não Informado(a)'];
   const days=[...new Set([...dayOrder, ...DATA.flatMap(r=>getListFilterValues(r,'Dias disponíveis'))])].sort((a,b)=>{
@@ -2837,7 +2835,6 @@ function populateFilters(){
   fillMultiFilter('yearFilter', years, 'Todos');
   fillMultiFilter('cityFilter', cities, 'Todas');
   fillMultiFilter('areaFilter', areas, 'Todas');
-  if(document.getElementById('categoryFilter')) fillMultiFilter('categoryFilter', categories, 'Todas');
   fillMultiFilter('periodFilter', periods, 'Todos');
   fillMultiFilter('dayFilter', days, 'Todos');
   fillMultiFilter('schoolFilter', ['Instituição escolar'], 'Todos', {'Instituição escolar':'school'});
@@ -2906,7 +2903,7 @@ function getFiltered(){
         years=getMultiValues('yearFilter'),
         cities=getMultiValues('cityFilter'),
         areas=getMultiValues('areaFilter'),
-        categories=document.getElementById('categoryFilter') ? getMultiValues('categoryFilter') : [],
+        categories=[],
         periods=getMultiValues('periodFilter'),
         days=getMultiValues('dayFilter'),
         types=getMultiValues('schoolFilter');
@@ -2916,7 +2913,6 @@ function getFiltered(){
     if(years.length&&!years.includes(clean(r['Ano de referência'])))return false;
     if(cities.length&&!cities.includes(clean(r['Cidade'])))return false;
     if(!hasIntersection(areas,getListFilterValues(r,'Áreas temáticas')))return false;
-    if(categories.length&&!hasIntersection(categories,(r._categorias||[]).map(id=>categoryMeta(id).nome)))return false;
     if(!hasIntersection(periods,getListFilterValues(r,'Período de preferência')))return false;
     if(!hasIntersection(days,getListFilterValues(r,'Dias disponíveis')))return false;
     if(types.includes('school')&&!isSchool(r))return false;
